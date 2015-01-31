@@ -10,9 +10,10 @@ const int NUM_ARGS = 2;
 struct {
     char *prog_name;
     int num_args;
-    char *args[2];
-    bool filled_bg;
 
+    int cur_page;
+    int total_pages;
+    bool filled_bg;
 } g;
 
 static struct argp_option options[] = {
@@ -37,7 +38,7 @@ static struct argp_option options[] = {
 
 /* Can quit.
  */
-bool arg_args(int argc, char **argv, char *ret_args[2]) {
+bool arg_args(int argc, char **argv, struct args *ret_args) {
     g.prog_name = argv[0];
 
     struct argp args = {0};
@@ -61,7 +62,9 @@ bool arg_args(int argc, char **argv, char *ret_args[2]) {
     if (g.num_args < NUM_ARGS) 
         arg_usage(args);
 
-    memcpy(ret_args, g.args, 2 * sizeof(char*));
+    ret_args->filled_bg = g.filled_bg;
+    ret_args->cur_page = g.cur_page;
+    ret_args->total_pages = g.total_pages;
 
     return true;
 
@@ -76,10 +79,13 @@ error_t argp_parser(int key, char* arg, struct argp_state *state) {
         exit(0);
     }
     else if (key == ARGP_KEY_ARG) { 
-        if (state->arg_num >= NUM_ARGS) 
+        int arg_num = state->arg_num;
+        if (arg_num >= NUM_ARGS) 
             argp_state_help(state, stdout, ARGP_HELP_STD_HELP);
-            //usage(state->root_argp);
-        g.args[state->arg_num] = state->argv[state->next-1];
+
+        char *arg = state->argv[state->next-1];
+        if (arg_num == 0) g.cur_page = stoi(arg);
+        else if (arg_num == 1) g.total_pages = stoi(arg);
         g.num_args++;
     }
     return 0;

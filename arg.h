@@ -1,7 +1,14 @@
 #include <argp.h>
 
-bool arg_args(int argc, char **argv, char *ret_args[2]);
+struct args {
+    bool filled_bg;
+    int cur_page;
+    int total_pages;
+};
+
+bool arg_args(int argc, char **argv, struct args *args);
 void arg_usage(struct argp args);
 
 static 
 error_t argp_parser(int key, char* arg, struct argp_state *state);
+

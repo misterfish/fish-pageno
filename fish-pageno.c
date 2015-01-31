@@ -36,13 +36,11 @@
 
 static struct {
     Aosd *aosd;
-    int page_cnt;
-    int cur_page;
     //FT_Face font_face;
     cairo_font_face_t *cairo_face;
 
-    char *args[2];
-
+    int cur_page;
+    int total_pages;
     bool filled_bg;
 
     int num_frames;
@@ -72,7 +70,7 @@ static struct {
 
 // OPTION_ARG_OPTIONAL means the value is optional (not the arg)
 
-void renderer(cairo_t* cr, void* user_data) {
+void renderer(cairo_t *cr, void *user_data) {
 
     const float *color;
 
@@ -107,24 +105,24 @@ void renderer(cairo_t* cr, void* user_data) {
 
     cairo_move_to(cr, s.x2, s.y2);
 
-    spr("%d", g.page_cnt);
+    spr("%d", g.total_pages);
     cairo_show_text(cr, _t);
 }
 
 // Doesn't return to what it was doing.
 void *sig_handler(int signum) {
-    if (signum == 1) {
-        if (s.shown) {
-            hide();
-            exit(0);
-        }
-    }
-    else {
-        err ("Got unexpected signal %d", CY_(spr_("%s", signum)));
+    /* sighup
+     */
+    if (signum != 1) 
+        die();
+
+    if (s.shown) {
+        hide();
+        exit(0);
     }
 }
 
-cairo_font_face_t* get_font(char* path) {
+cairo_font_face_t *get_font(char *path) {
     FT_Face face;
     FT_Library library;
 
@@ -155,6 +153,8 @@ int main(int argc, char **argv) {
 
     init(argc, argv);
 
+    /* sighup
+     */
     f_sig(1, (void*) sig_handler);
 
     char *path1 = "/usr/share/fonts/truetype/Andika-R.ttf";
@@ -190,19 +190,17 @@ void update_boundaries() {
 void init(int argc, char **argv) {
     autoflush();
 
-    //char ***ret_args = (char***) &g.args;
-
+    struct args args = {0};
     /* Can quit.
      */
-    if (!arg_args(argc, argv, g.args)) {
+    if (!arg_args(argc, argv, &args)) {
         piep;
         exit(1);
     }
         
-    int cur = stoi(g.args[0]);
-    int total = stoi(g.args[1]);
-    g.page_cnt = total;
-    g.cur_page = cur;
+    g.cur_page = args.cur_page;
+    g.filled_bg = args.filled_bg;
+    g.total_pages = args.total_pages;
 
     g.num_frames = g.filled_bg ? NUM_FRAMES_FILLED : NUM_FRAMES_NOT_FILLED;
 
