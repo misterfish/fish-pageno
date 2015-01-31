@@ -1,5 +1,7 @@
 #undef DEBUG 
 
+#define _GNU_SOURCE 
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,15 +18,9 @@
 
 #include <glib.h>
 
-#include <argp.h>
-
 #include <fish-util.h>
-#include "config.h"
 
-void init(int, char**);
-void show();
-void hide();
-void update();
+#include "config.h"
 
 #ifndef CONFIG_NUM_FRAMES_NOT_FILLED
 #error CONFIG_NUM_FRAMES_NOT_FILLED undefined.
@@ -34,43 +30,9 @@ void update();
 #error CONFIG_NUM_FRAMES_FILLED undefined.
 #endif
 
-static const int NUM_FRAMES_FILLED = CONFIG_NUM_FRAMES_FILLED;
-static const int NUM_FRAMES_NOT_FILLED = CONFIG_NUM_FRAMES_NOT_FILLED;
-
-static const float FONT_FACTOR = .35;
-
-static const int WIDTH_INIT = 400;
-static const int HEIGHT_INIT = 400;
-static const int WIDTH = 50; // final
-static const int HEIGHT = 50; // final
-static const int LEFT = 0;
-static const int TOP = 0;
-
-static const int STAY_ALIVE_SECS = 2;
-
-static const float LINE_X1_PERC = .2;
-static const float LINE_Y1_PERC = .8;
-static const float LINE_X2_PERC = .8;
-static const float LINE_Y2_PERC = .2;
-
-static const float NUMER_X_PERC = .23;
-static const float NUMER_Y_PERC = .4;
-static const float DENOM_X_PERC = .55;
-static const float DENOM_Y_PERC = .75;
-
-//float LINE_SLOPE = .25 / (LINE_X2_PERC - LINE_X1_PERC);
-//static const float LINE_SLOPE = .2 / .4;
-
-static const float COLOR_NOT_FILLED[] = { .3, .2, .05 };
-static const float COLOR_FILLED[] = { .7, .7, .4 };
-
-static const float COLOR_BG[] = { .1, .2, .4 };
-
-static const float ALPHA_INIT = .1;
-
-//static char* USAGE;
-
-static const int NUM_ARGS = 2;
+#include "fish-pageno.h"
+#include "arg.h"
+#include "const.h"
 
 static struct {
     Aosd *aosd;
@@ -79,7 +41,6 @@ static struct {
     //FT_Face font_face;
     cairo_font_face_t *cairo_face;
 
-    int num_args;
     char *args[2];
 
     bool filled_bg;
@@ -109,50 +70,7 @@ static struct {
     float font_size;
 } s;
 
-static void usage(struct argp args) { // exit 1
-    argp_help(&args, stderr, ARGP_HELP_USAGE, "allen");
-    exit(1);
-}
-
-error_t argp_parser(int key, char* arg, struct argp_state *state) {
-    if (key == 'f') {
-        g.filled_bg = true;
-    }
-    else if (key == 'h') {
-        argp_state_help(state, stdout, ARGP_HELP_STD_HELP);
-        exit(0);
-    }
-    else if (key == ARGP_KEY_ARG) { 
-        if (state->arg_num >= NUM_ARGS) 
-            argp_state_help(state, stdout, ARGP_HELP_STD_HELP);
-            //usage(state->root_argp);
-        g.args[state->arg_num] = state->argv[state->next-1];
-        g.num_args++;
-    }
-    return 0;
-}
-
 // OPTION_ARG_OPTIONAL means the value is optional (not the arg)
-
-static struct argp_option options[] = {
-    {
-        0,
-        'h', // 0, //'n', // key
-        0, // name
-        OPTION_ARG_OPTIONAL, // flags
-        0, // text
-        0
-    }, 
-    {
-        "filled_bg", // long opt (--new)
-        'f', // short opt (-n)
-        0, // name (for long usage message, leave as 0 for optional args)
-        OPTION_ARG_OPTIONAL, // flags
-        "Fill background.",
-        0
-    }, 
-    {0}
-};
 
 void renderer(cairo_t* cr, void* user_data) {
 
@@ -235,16 +153,13 @@ cairo_font_face_t* get_font(char* path) {
 
 int main(int argc, char **argv) {
 
-    //USAGE = malloc( 100 * sizeof(char));
-    //sprintf(USAGE, "Usage: %s [-f to fill bg] cur_page total_pages", argv[0]);
-
     init(argc, argv);
 
     f_sig(1, (void*) sig_handler);
 
-    char* path1 = "/usr/share/fonts/truetype/Andika-R.ttf";
+    char *path1 = "/usr/share/fonts/truetype/Andika-R.ttf";
     // generic way??
-    char* path2 = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+    char *path2 = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
     cairo_font_face_t *cairo_face;
     cairo_face = get_font(path1);
     if (! cairo_face) {
@@ -270,32 +185,20 @@ void update_boundaries() {
     aosd_set_position_with_offset(g.aosd, COORDINATE_MINIMUM, COORDINATE_MINIMUM, s.width, s.height, s.left, s.top);
 }
 
-// can die
+/* Can quit.
+ */
 void init(int argc, char **argv) {
     autoflush();
 
-    /* Can also init with: static struct argp args */
-    struct argp args = {0};
-    args.args_doc = "cur-page total-pages"; // text in usage msg, after args
-    //args.doc = "Before options \v after options"; // help msg
+    //char ***ret_args = (char***) &g.args;
 
-    args.options = options;
-    args.parser = (argp_parser_t) argp_parser;
-
-    int arg_index;
-
-    if(
-        argp_parse(&args, argc, argv, 
-            0,
-            &arg_index, 
-            0 // input = extra data for parsing function
-            )
-    ) 
-        usage(args);
-
-    if (g.num_args < NUM_ARGS) 
-        usage(args);
-
+    /* Can quit.
+     */
+    if (!arg_args(argc, argv, g.args)) {
+        piep;
+        exit(1);
+    }
+        
     int cur = stoi(g.args[0]);
     int total = stoi(g.args[1]);
     g.page_cnt = total;

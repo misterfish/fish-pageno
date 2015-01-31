@@ -16,16 +16,21 @@ freetype2_all 	:= $(shell pkg-config --cflags --libs freetype2)
 include $(fish_util_dir)/fish-util.mk
 VPATH=$(fish_util_dir)
 
-
 all		= $(foreach i,$(modules),$(${i}_all))
 
-all: fish-pageno
+src		:= fish-pageno.c arg.c fish-pageno.h config.h const.h arg.h
+obj		:= arg.o
+
+all: $(obj) fish-pageno
+
+arg.o: %.o: %.c
+	$(cc) $(all) -c $^ -o $@
 
 $(fishutil_obj): $(fishutil_src_dep)
 	make -C $(fish_util_dir)
 
-fish-pageno: $(fishutil_obj) fish-pageno.c config.h
-	$(cc) $(all) fish-pageno.c -o fish-pageno
+fish-pageno: $(fishutil_obj) $(src) 
+	$(cc) $(all) fish-pageno.c $(obj) -o fish-pageno
 
 clean: 
 	rm -f *.o
