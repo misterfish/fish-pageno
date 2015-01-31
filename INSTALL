@@ -1,0 +1,14 @@
+ln -s config-fastcpu.h config.h
+
+or
+
+ln -s config-mediumcpu.h config.h
+
+or
+
+ln -s config-slowcpu.h config.h
+
+make
+
+./fish-pageno 3 5 # should display 3/5 
+

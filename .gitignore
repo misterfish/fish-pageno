@@ -1,0 +1,6 @@
+*.swo
+*.swp
+
+osd-pdf-pageno
+*.o
+config.h
