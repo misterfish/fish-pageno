@@ -29,7 +29,7 @@ $(obj): %.o: %.c
 	$(cc) $(all) -c $^ -o $@
 
 $(fishutil_obj): $(fishutil_src_dep)
-	make -C $(fishutil_dir)
+	make -C $(fishutilx_topdir)
 
 fish-pageno: $(fishutil_obj) $(src) 
 	$(cc) $(all) fish-pageno.c $(obj) -o fish-pageno
