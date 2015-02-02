@@ -6,17 +6,22 @@ cc = gcc -std=c99
 modules = math aosd glib freetype2 fishutil
 
 # shared
+math_inc	:= 
 math_all 	:= -lm
-aosd_all 	:= $(shell pkg-config --cflags --libs libaosd)
+aosd_inc 	:= $(shell pkg-config --cflags libaosd)
+aosd_all 	:= $(shell pkg-config --cflags --libs libaosd) 
+glib_inc 	:= $(shell pkg-config --cflags glib-2.0)
 glib_all 	:= $(shell pkg-config --cflags --libs glib-2.0)
+freetype2_inc 	:= $(shell pkg-config --cflags freetype2)
 freetype2_all 	:= $(shell pkg-config --cflags --libs freetype2)
 
 # static
 
-# sets <module>_obj, <module>_src_dep, <module>_ld, and <module>_all.
+# sets <module>_inc, <module>_obj, <module>_src_dep, <module>_ld, and <module>_all.
 include $(fishutil_dir)/fishutil.mk
 VPATH=$(fishutil_dir)
 
+inc		= $(foreach i,$(modules),$(${i}_inc))
 all		= $(foreach i,$(modules),$(${i}_all))
 
 main		:= fish-pageno
@@ -26,7 +31,7 @@ obj		:= arg.o
 all: $(obj) $(main)
 
 $(obj): %.o: %.c
-	$(cc) $(all) -c $^ -o $@
+	$(cc) $(inc) -c $^ -o $@
 
 $(fishutil_obj): $(fishutil_src_dep)
 	make -C $(fishutilx_topdir)
