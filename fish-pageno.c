@@ -114,7 +114,7 @@ void *sig_handler(int signum) {
     /* sighup
      */
     if (signum != 1) 
-        die();
+        ierr;
 
     if (s.shown) {
         hide();
