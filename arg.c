@@ -16,6 +16,9 @@ struct {
     bool filled_bg;
 } g;
 
+/* OPTION_ARG_OPTIONAL means the value is optional (not the arg)
+ */
+
 static struct argp_option options[] = {
     {
         0,

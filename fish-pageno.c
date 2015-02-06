@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 
 #include <string.h> // strdup
 
@@ -68,8 +69,6 @@ static struct {
     float font_size;
 } s;
 
-// OPTION_ARG_OPTIONAL means the value is optional (not the arg)
-
 void renderer(cairo_t *cr, void *user_data) {
 
     const float *color;
@@ -110,7 +109,7 @@ void renderer(cairo_t *cr, void *user_data) {
 }
 
 // Doesn't return to what it was doing.
-void *sig_handler(int signum) {
+void sig_handler(int signum) {
     /* sighup
      */
     if (signum != 1) 
@@ -126,21 +125,23 @@ cairo_font_face_t *get_font(char *path) {
     FT_Face face;
     FT_Library library;
 
-    if (FT_Init_FreeType( &library )) {
-        err ("Can't make library.");
-    }
-
-    if ( FT_New_Face(
-            library, 
-            path,
-            // face-index
-            0,
-            &face
-        )
-    ) {
-        warn ("Can't get font (path: %s).", CY_(path));
+    tryft(FT_Init_FreeType(&library), "Can't make library"); 
+    if (!tryftok)
         return NULL;
-    }
+
+    _();
+    BR(path);
+    spr("Can't get font (%s)", _s);
+    tryft(FT_New_Face(
+        library, 
+        path,
+        // face-index
+        0,
+        &face
+    ), _t);
+
+    if (!tryftok)
+        return NULL;
 
     cairo_font_face_t *cairo_face = 
         cairo_ft_font_face_create_for_ft_face (face, FT_LOAD_TARGET_NORMAL);
@@ -155,19 +156,13 @@ int main(int argc, char **argv) {
 
     /* sighup
      */
-    f_sig(1, (void*) sig_handler);
+    f_sig(1, sig_handler);
 
-    char *path1 = "/usr/share/fonts/truetype/Andika-R.ttf";
-    // generic way??
-    char *path2 = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-    cairo_font_face_t *cairo_face;
-    cairo_face = get_font(path1);
-    if (! cairo_face) {
-        cairo_face = get_font(path2);
-    }
-    if (! cairo_face) {
+    cairo_font_face_t *cairo_face = get_font(FONT_PATH);
+
+    if (!cairo_face) 
         err("Can't get any fonts.");
-    }
+
     g.cairo_face = cairo_face;
 
     // HUP
@@ -178,7 +173,7 @@ int main(int argc, char **argv) {
     f_sig(1, NULL);
 
     hide();
-    exit;
+    return 0;
 }
 
 void update_boundaries() {
@@ -191,6 +186,7 @@ void init(int argc, char **argv) {
     autoflush();
 
     struct args args = {0};
+
     /* Can quit.
      */
     if (!arg_args(argc, argv, &args)) {

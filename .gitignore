@@ -1,6 +1,6 @@
 *.swo
 *.swp
-
-osd-pdf-pageno
 *.o
+
+fish-pageno
 config.h
