@@ -1,6 +1,5 @@
 #define _GNU_SOURCE 
 
-#include <unistd.h>
 #include <stdbool.h>
 
 #include <aosd.h>
@@ -19,6 +18,7 @@
  * The whole thing could also be done by first setting a font for top, then
  * making the line, then using the same font for bottom.
  */
+
 void draw_renderer(cairo_t *cr, void *user_data) {
 
     /* Init after show() has been called at least once.
@@ -158,7 +158,6 @@ g.final_height = WIDTH_FINAL;
 
         draw_update();
     }
-    sleep(g.stay_alive_secs);
 
     return true;
 }
@@ -195,10 +194,9 @@ float K = .001;
         int x = margin_side + width;
         int y = margin_tb + height;
         int y_projected_on_line = HEIGHT_INIT - slope * x;
-        if (y > y_projected_on_line) {
-            //info("stopping at y = %d, projected y = %d, i = %f", y, y_projected_on_line, i);
+        if (y > y_projected_on_line) 
             break;
-        }
+
         prev_width = width;
         prev_height = height;
         prev_i = i;
@@ -217,10 +215,8 @@ float K = .001;
         int x = WIDTH_INIT - margin_side - width;
         int y = HEIGHT_INIT - margin_tb - height;
         int y_projected_on_line = HEIGHT_INIT - slope * x;
-        if (y < y_projected_on_line) {
-            //info("stopping at y = %d, projected y = %d, i = %f", y, y_projected_on_line, i);
+        if (y < y_projected_on_line) 
             break;
-        }
         prev_width = width;
         prev_height = height;
         prev_i = i;
@@ -230,18 +226,15 @@ float K = .001;
     g.denominator_height_perc = prev_height / HEIGHT_INIT;
     g.denominator_width_perc = prev_width / WIDTH_INIT;
 
-    /*
-    g.font_factor_numerator *= FONT_FACTOR_SCALE;
-    g.font_factor_denominator *= FONT_FACTOR_SCALE;
-    */
-
     g.init_boundaries = true;
 
     return true;
 }
 
+/* Based on currently set font size in the *cr.
+ */
 static bool get_metrics(cairo_t *cr, char *s, double *width, double *height) {
-    cairo_text_extents_t extents;
+    static cairo_text_extents_t extents;
     /* void */
     cairo_text_extents(cr, s, &extents);
     *width = extents.width;

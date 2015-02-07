@@ -4,21 +4,17 @@
 
 //#define TESTING
 
-#include <errno.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-
-#include <string.h> // strdup
 
 #include <aosd.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <cairo-ft.h>
-
 #include <glib.h>
 
 #include <fish-util.h>
@@ -40,14 +36,31 @@
 #include "fish-pageno.h"
 
 /* global.h
+ *
+ * struct g
  */
-
-//extern struct g;
 
 /* draw.h
+ *
+ * struct s
  */
-//extern struct s;
 
+ /* segfaulting.
+  * cairo and aosd are leaking a lot of memory, even when it doesn't.
+ */
+void cleanup() {
+return;
+    cairo_font_face_destroy(g.cairo_face);
+    FT_Done_Face(*g.ft_face);
+    aosd_destroy(g.aosd);
+    fish_util_cleanup();
+
+}
+
+void exit_with_cleanup(int st) {
+    cleanup();
+    exit(st);
+}
 void sig_handler(int signum) {
     /* sighup
      */
@@ -57,13 +70,12 @@ void sig_handler(int signum) {
     if (s.shown) {
         if (!draw_hide())
             piep;
-        exit(0);
+        exit_with_cleanup(0);
     }
 }
 
 cairo_font_face_t *get_font(char *path) {
 
-    /* typedef struct FT_FaceRec_* FT_Face */
     FT_Face face;
     FT_Library library;
 
@@ -83,13 +95,15 @@ cairo_font_face_t *get_font(char *path) {
     ), _t);
 
     if (!tryftok)
-        return NULL;
+        return NULL;;
 
-    cairo_font_face_t *cairo_face = 
-        cairo_ft_font_face_create_for_ft_face (face, FT_LOAD_TARGET_NORMAL);
+    g.ft_face = &face; // for cleanup
 
+    cairo_font_face_t *cairo_face = cairo_ft_font_face_create_for_ft_face (face, FT_LOAD_TARGET_NORMAL);
+
+    if (!cairo_face) 
+        ierr("Can't make cairo face.");
     return cairo_face;
-
 }
 
 int main(int argc, char **argv) {
@@ -107,31 +121,30 @@ int main(int argc, char **argv) {
 
     f_sig(1, NULL);
 
+    sleep(g.stay_alive_secs);
     if (!draw_hide())
         piep;
+
+    cleanup();
 
     return 0;
 }
 
 /* Can quit.
  */
-void init(int argc, char **argv) {
+bool init(int argc, char **argv) {
     autoflush();
 
     struct args args = {0};
 
-    /* Can quit.
-     */
-    if (!arg_args(argc, argv, &args)) {
-        piep;
-        exit(1);
-    }
+    if (!arg_args(argc, argv, &args))
+        pieprf;
         
     cairo_font_face_t *cairo_face = get_font(FONT_PATH);
-
-    if (!cairo_face) 
-        err("Can't get any fonts.");
-
+    if (!cairo_face) {
+        warn("Can't get any fonts.");
+        return false;
+    }
     g.cairo_face = cairo_face;
 
     g.cur_page = args.cur_page;
@@ -163,6 +176,8 @@ void init(int argc, char **argv) {
     draw_update_boundaries();
 
     aosd_show(aosd);
+
+    return true;
 }
 
 

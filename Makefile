@@ -30,7 +30,8 @@ obj		:= arg.o draw.o
 
 all: $(obj) $(main)
 
-$(obj): %.o: %.c
+# Doesn't depend on .h's XX
+$(obj): %.o: %.c 
 	$(cc) $(inc) -c $^ -o $@
 
 $(fishutil_obj): $(fishutil_src_dep)

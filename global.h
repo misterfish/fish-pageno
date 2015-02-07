@@ -1,7 +1,12 @@
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <cairo-ft.h>
+
 struct {
     Aosd *aosd;
-    //FT_Face font_face;
+
     cairo_font_face_t *cairo_face;
+    FT_Face *ft_face;
 
     int cur_page;
     int total_pages;
@@ -28,7 +33,7 @@ struct {
     double slope;
 
     bool init_boundaries;
-   bool show_called;
+    bool show_called;
 } g;
 
 

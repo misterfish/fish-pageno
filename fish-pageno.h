@@ -48,9 +48,4 @@ const struct ft_error
 /* End error mapping.
  */
 
-void init(int, char**);
-void show();
-void hide();
-void update();
-
-bool get_metrics(cairo_t *cr, char *s, double *width, double *height);
+bool init(int, char**);
