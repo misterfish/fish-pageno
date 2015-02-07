@@ -1,19 +1,27 @@
-#define FONT_PATH "/usr/share/fonts/truetype/Andika-R.tf"
+// XX
+#define FONT_PATH "/usr/share/fonts/truetype/Andika-R.ttf"
+//#define FONT_PATH "/usr/share/fonts/truetype/Andika-R.ttf/usr/share/fonts/truetype/Andika-R.ttf/usr/share/fonts/truetype/Andika-R.ttf"
 
 bool tryftok;
 
 #define TRY_STRLEN 200 // some safety
 
+/* msg can depend on user data (e.g. font path) */
 #define tryft(x, msg) do { \
     FT_Error e;  \
     if ((e = x)) { \
-        int len = strnlen(msg, TRY_STRLEN); \
-        assert(len < TRY_STRLEN); \
         struct ft_error fe = ft_errors[e]; \
         const char *err_msg = fe.err_msg; \
-        int len2 = strlen(err_msg); /* -l- */ \
-        char *m = str(sizeof(char) * (3 + 1 + len + len2)); \
-        sprintf(m, "%s (%s)", msg, err_msg); \
+        /* in case literal */ \
+        char *msgp = (char*) msg; \
+        int len = strnlen(msgp, TRY_STRLEN); \
+        if (len == TRY_STRLEN) \
+            msgp[len-1] = '\0'; \
+        char *errmsgp = str(TRY_STRLEN); \
+        int len2 = snprintf(errmsgp, TRY_STRLEN, "%s", err_msg); \
+        int mlen = 3 + 1 + len + len2; \
+        char *m = str(mlen); \
+        snprintf(m, mlen, "%s (%s)", msgp, errmsgp); \
         warn(m); \
         free(m); \
         tryftok = false; \
@@ -45,4 +53,4 @@ void show();
 void hide();
 void update();
 
-
+bool get_metrics(cairo_t *cr, char *s, double *width, double *height);

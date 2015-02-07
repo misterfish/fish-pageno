@@ -4,6 +4,7 @@ struct args {
     bool filled_bg;
     int cur_page;
     int total_pages;
+    int stay_alive_secs;
 };
 
 bool arg_args(int argc, char **argv, struct args *args);
