@@ -25,14 +25,14 @@ inc		= $(foreach i,$(modules),$(${i}_inc))
 all		= $(foreach i,$(modules),$(${i}_all))
 
 main		:= fish-pageno
-src		:= $(main).c $(main).h draw.c arg.c global.h const.h config.h draw.h arg.h
+headers_non_obj	:= global.h const.h config.h
+src		:= $(main).c $(main).h $(headers_non_obj) draw.c arg.c draw.h arg.h
 obj		:= arg.o draw.o
 
 all: $(obj) $(main)
 
-# Doesn't depend on .h's XX
-$(obj): %.o: %.c 
-	$(cc) $(inc) -c $^ -o $@
+$(obj): %.o: %.c $(headers_non_obj)
+	$(cc) $(inc) -c $< -o $@
 
 $(fishutil_obj): $(fishutil_src_dep)
 	make -C $(fishutilx_topdir)
