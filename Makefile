@@ -25,8 +25,8 @@ inc		= $(foreach i,$(modules),$(${i}_inc))
 all		= $(foreach i,$(modules),$(${i}_all))
 
 main		:= fish-pageno
-src		:= $(main).c $(main).h arg.c config.h const.h arg.h
-obj		:= arg.o
+src		:= $(main).c $(main).h draw.c arg.c global.h const.h config.h draw.h arg.h
+obj		:= arg.o draw.o
 
 all: $(obj) $(main)
 
