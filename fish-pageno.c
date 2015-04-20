@@ -65,7 +65,7 @@ void sig_handler(int signum) {
     /* sighup
      */
     if (signum != 1) 
-        ierr;
+        ierr("");
 
     if (s.shown) {
         if (!draw_hide())
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 /* Can quit.
  */
 bool init(int argc, char **argv) {
-    autoflush();
+    f_autoflush();
 
     struct args args = {0};
 
@@ -152,8 +152,8 @@ bool init(int argc, char **argv) {
     g.total_pages = args.total_pages;
     g.stay_alive_secs = args.stay_alive_secs;
 
-    g.cur_page_s = str(int_length(g.cur_page) + 1);
-    g.total_pages_s = str(int_length(g.total_pages) + 1);
+    g.cur_page_s = str(f_int_length(g.cur_page) + 1);
+    g.total_pages_s = str(f_int_length(g.total_pages) + 1);
     sprintf(g.cur_page_s, "%d", g.cur_page);
     sprintf(g.total_pages_s, "%d", g.total_pages);
 

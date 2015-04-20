@@ -28,9 +28,9 @@ struct {
 bool arg_args(int argc, char **argv, struct args *ret_args) {
 
     char *stays1 = "Stay alive secs (default=%d)";
-    char *stays = malloc(strlen(stays1) - 2 + int_length(STAY_ALIVE_SECS) + 1);
+    char *stays = malloc(strlen(stays1) - 2 + f_int_length(STAY_ALIVE_SECS) + 1);
     if (!stays) 
-        ierr_perr;
+        ierr_perr("");
     sprintf(stays, stays1, STAY_ALIVE_SECS);
 
     g.stay_alive_secs = STAY_ALIVE_SECS;
@@ -115,8 +115,16 @@ error_t argp_parser(int key, char *arg, struct argp_state *state) {
             argp_state_help(state, stdout, ARGP_HELP_STD_HELP);
 
         char *arg = state->argv[state->next-1];
-        if (arg_num == 0) g.cur_page = stoi(arg);
-        else if (arg_num == 1) g.total_pages = stoi(arg);
+        if (arg_num == 0) {
+            g.cur_page = atoi(arg);
+            if (! g.cur_page) 
+                return 1; 
+        }
+        else if (arg_num == 1) {
+            g.total_pages = atoi(arg);
+            if (! g.total_pages) 
+                return 1;
+        }
         g.num_args++;
     }
     return 0;

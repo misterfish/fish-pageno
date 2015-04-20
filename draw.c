@@ -173,9 +173,11 @@ bool draw_init_boundaries(cairo_t *cr) {
      */
     float slope = (sby - sty) / (stx - sbx);
 
+/* XX
+ */
 float I = .1;
 float J = .5;
-float K = .001;
+float K = .01;
 
     float i;
     float prev_i;
