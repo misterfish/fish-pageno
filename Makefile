@@ -1,51 +1,71 @@
-fishutilx_topdir = fish-lib-util
-fishutil_dir = $(fishutilx_topdir)/fish-util
+cc 		= gcc 
+CC 		= $(cc) 
 
-cc = gcc -std=c99 
+CFLAGS		+= -std=c99 
+LDFLAGS		?= 
 
-modules = math aosd glib freetype2 fishutil
+main		= fish-pageno
 
-# shared
-math_inc	:= 
-math_all 	:= -lm
-aosd_inc 	:= $(shell pkg-config --cflags libaosd)
-aosd_all 	:= $(shell pkg-config --cflags --libs libaosd) 
-glib_inc 	:= $(shell pkg-config --cflags glib-2.0)
-glib_all 	:= $(shell pkg-config --cflags --libs glib-2.0)
-freetype2_inc 	:= $(shell pkg-config --cflags freetype2)
-freetype2_all 	:= $(shell pkg-config --cflags --libs freetype2)
+# Will be looped over to build <module>_cflags, <module>_ldflags, etc.
+modules_manual 	= fishutil fishutils
+modules_pkgconfig	= libaosd glib-2.0 freetype2
 
-# static
+# Subdirectories (will be make -C'ed).
+submodules	= fish-lib-util
 
-# sets <module>_inc, <module>_obj, <module>_src_dep, <module>_ld, and <module>_all.
-include $(fishutil_dir)/fishutil.mk
-VPATH=$(fishutil_dir)
+fishutil_dir		= fish-lib-util
+fishutil_cflags		= $(shell PKG_CONFIG_PATH=$(fishutil_dir)/pkg-config/static pkg-config --cflags fish-util)
+fishutil_ldflags	= $(shell PKG_CONFIG_PATH=$(fishutil_dir)/pkg-config/static pkg-config --static --libs fish-util)
+fishutils_cflags	= $(shell PKG_CONFIG_PATH=$(fishutil_dir)/pkg-config/static pkg-config --cflags fish-utils)
+fishutils_ldflags	= $(shell PKG_CONFIG_PATH=$(fishutil_dir)/pkg-config/static pkg-config --static --libs fish-utils)
 
-inc		= $(foreach i,$(modules),$(${i}_inc))
-all		= $(foreach i,$(modules),$(${i}_all))
+ifneq ($(modules_pkgconfig),)
+    # Check user has correct packages installed (and found by pkg-config).
+    pkgs_ok := $(shell pkg-config --print-errors --exists $(modules_pkgconfig) && echo 1)
+    ifneq ($(pkgs_ok),1)
+        $(error Cannot find required package(s\). Please \
+        check you have the above packages installed and try again.)
+    endif
+endif
 
-main		:= fish-pageno
-headers_non_obj	:= global.h const.h config.h
-src		:= $(main).c $(main).h $(headers_non_obj) draw.c arg.c draw.h arg.h
-obj		:= arg.o draw.o
+CFLAGS		+= -Werror=implicit-function-declaration -W -Wall -Wextra -I./
+CFLAGS		+= -Wno-missing-field-initializers # GCC bug with {0}
+CFLAGS		+= $(foreach i,$(modules_manual),$(${i}_cflags))
+CFLAGS		+= $(foreach i,$(modules_pkgconfig),$(shell pkg-config "$i" --cflags))
 
-all: $(obj) $(main)
+LDFLAGS		+= -Wl,--export-dynamic
+LDFLAGS		+= -lm # log
+LDFLAGS		+= $(foreach i,$(modules_manual),$(${i}_ldflags))
+LDFLAGS		+= $(foreach i,$(modules_pkgconfig),$(shell pkg-config "$i" --libs))
 
-$(obj): %.o: %.c $(headers_non_obj)
-	$(cc) $(inc) -c $< -o $@
+src		= $(main).c draw.c arg.c
 
-$(fishutil_obj): $(fishutil_src_dep)
-	make -C $(fishutilx_topdir)
+hdr		= $(main).h global.h const.h config.h draw.h arg.h
 
-fish-pageno: $(fishutil_obj) $(src) 
-	$(cc) $(all) fish-pageno.c $(obj) -o fish-pageno
+obj		= $(main).o draw.o arg.o
+
+all: submodules $(main)
+
+submodules: 
+	@for i in $(submodules); do \
+	    make -C "$$i"; \
+	done
+
+$(main): $(src) $(hdr) $(obj)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(obj) -o $(main)
+
+# Note that all objs get rebuilt if any header changes. 
+
+$(obj): %.o: %.c $(hdr)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean: 
 	rm -f *.o
+	rm -f *.so
 	rm -f $(main)
+	cd $(fishutil_dir) && make clean
 
 mrproper: clean
-	cd $(fishutilx_topdir) && make mrproper
+	cd $(fishutil_dir) && make mrproper
 
 .PHONY: all clean mrproper
-
